@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_USER: pipeline
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pipeline_local}
+      POSTGRES_DB: pipeline
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - pipeline-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pipeline -d pipeline"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  pipeline:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://pipeline:${POSTGRES_PASSWORD:-pipeline_local}@postgres:5432/pipeline
+      SOURCE_PATH: /app/data/crm.jsonl
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["health"]
+volumes:
+  pipeline-data:

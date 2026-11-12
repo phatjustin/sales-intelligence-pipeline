@@ -1,0 +1,16 @@
+# Optional: backend checkout must be available and the router installed first.
+services:
+  backend-test:
+    build:
+      context: ../python-sales-intelligence
+      dockerfile: ../sales-intelligence-pipeline/integrations/backend.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pipeline:${POSTGRES_PASSWORD:-pipeline_local}@postgres:5432/pipeline_test
+      ENVIRONMENT: test
+      API_KEY: synthetic-integration-key
+    volumes:
+      - ./integrations/backend_tests:/backend/pipeline_tests:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["pytest", "-q", "pipeline_tests"]
